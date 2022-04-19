@@ -1,0 +1,65 @@
+# Docs: https://www.raspberrypi.com/documentation/computers/config_txt.html
+# Overlays: https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README
+
+#-------Display---------
+# Uncomment if HDMI display is not detected and composite is being outputted.
+hdmi_force_hotplug=1
+
+# Uncomment to force a console size. By default it will be display's size minus overscan.
+framebuffer_width=480
+framebuffer_height=320
+
+# Uncomment to force a specific HDMI mode (this will force VGA).
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=480 320 60 1 0 0 0
+
+# Set to "1" if your display has a black border of unused pixels visible.
+disable_overscan=1
+
+#-------GPU memory splits-------
+gpu_mem_256=128
+gpu_mem_512=256
+gpu_mem_1024=256
+
+#-------Boot splash screen------
+disable_splash=1
+
+#-------Onboard sound-----------
+dtparam=audio=on
+audio_pwm_mode=2
+dtoverlay=audremap,pins_18_19
+
+#-------I2C (required for original tft driver)-------------
+#dtparam=i2c_arm=on
+#dtparam=i2c1=on
+#dtparam=i2c_arm_baudrate=100000
+
+#-------SPI-------------
+dtparam=spi=off
+
+#-------Serial/UART-----
+# NB: "enable_uart=1" will enforce "core_freq=250" on RPi models with onboard WiFi.
+enable_uart=0
+
+#-------SD card HPD-----
+# Comment to enable SD card hot-plug detection, while booting via USB or network.
+# NB: This causes constant CPU load and kernel errors when no SD card is inserted.
+dtparam=sd_poll_once
+
+#-------Overclock-------
+temp_limit=65
+initial_turbo=20
+
+#over_voltage=0
+#arm_freq=1000
+#core_freq=400
+#sdram_freq=450
+
+#over_voltage_min=0
+#arm_freq_min=300
+#core_freq_min=250
+#sdram_freq_min=400
+
+# Bluetooth
+dtoverlay=disable-bt

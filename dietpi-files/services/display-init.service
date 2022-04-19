@@ -1,0 +1,11 @@
+[Unit]
+Description=Init SPI display
+DefaultDependencies=no
+After=local-fs.target
+
+[Service]
+ExecStartPre=/home/bart/bin/display-on
+ExecStart=/home/bart/bin/fbcp-ili9341
+
+[Install]
+WantedBy=sysinit.target

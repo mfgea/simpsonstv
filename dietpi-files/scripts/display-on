@@ -1,0 +1,2 @@
+#!/bin/sh
+raspi-gpio set 18 op dh
