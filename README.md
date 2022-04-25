@@ -26,15 +26,15 @@ My changes, all tested on the RPI ZERO:
 - Compiled (automatically) fbcp-ili9341 (awesome render speed, but lack of touchscreen support)
 - display-on & display-off console commands
 - Splash screen
-- New Player script.
+- New Player script including hadlers for the input (buttons, rotary encoder)
+- Support "channels" (different folders in the videos partition, rotary encoder would change channels)
+- Added mdns, so now you can access it using simpsonstv.local (for example: `ssh bart@simpsonstv.local`)
 - New buttons script (supports rotary encoder, with "next video" and "rewind 15 secs" features)
 - Separate partition for videos (FAT32)
 - Videos partition accessible through Samba
 
 # TODO
-- Move buttons and player to the same app
 - Auto updater script
-- Support "channels" (different folders in the videos partition, rotary encoder would change channels)
 - Freeze the root partition; without writes to the sd you could just unplug the RPi without risk
 - Autohotspot: When there's no wifi network available for connection, put up a Hotspot. The admin can then connect to it and configure Wifi credentials. Useful when taking the tv on a trip.
 

@@ -1,0 +1,25 @@
+{
+  "playlistOptions" : {
+    "scanDirectories": false,
+    "scanRoot": false
+  },
+  "showChannelLabel": true,
+  "labelDuration": "05",
+  "appendChannels": [
+    {
+      "label": "Simpsons",
+      "uri": "./Simpsons/",
+      "shuffle": true
+    },
+    {
+      "label": "Futurama",
+      "uri": "./Futurama/",
+      "shuffle": true
+    },
+    {
+      "label": "Frontdoor Cam",
+      "uri": "rtsp://192.168.1.103:554/11",
+      "shuffle": false
+    }
+  ]
+}

@@ -4,6 +4,7 @@ DefaultDependencies=no
 After=local-fs.target
 
 [Service]
+User=bart
 ExecStart=/usr/bin/fbi --noverbose /home/bart/splash.png
 StandardInput=tty
 StandardOutput=tty

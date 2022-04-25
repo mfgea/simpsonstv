@@ -3,6 +3,7 @@ Description=tvplayer
 After=network.target
 
 [Service]
+User=bart
 WorkingDirectory=/home/bart/bin/
 ExecStart=/usr/bin/python3 /home/bart/bin/player.py
 Restart=always

@@ -1,38 +1,77 @@
 import os
 import random
-import time
-from subprocess import PIPE, Popen, STDOUT
+import RPi.GPIO as GPIO
+from time import sleep
 
-directory = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../videos')
+from modules.toggle_button import ToggleButton
+from modules.encoder import Encoder
+from modules.screen import Screen
+from modules.playlist_player import PlaylistPlayer
+
+VIDS_DIR='/home/bart/videos/'
+
+BUTTON = 26
+SCREEN = 18
+ENCODER_A = 27
+ENCODER_B = 22
 
 libraries = []
-videos = []
 
-def getLibraries():
-    global libraries
-    libraries = []
-    for dir in os.listdir(directory):
-        if dir.isdir():
-            libraries.append(os.path.join(directory, dir))
+# import logging
+# logging.basicConfig()
+# logging.getLogger().setLevel(logging.DEBUG)
 
-def getVideos():
-    global videos
-    videos = []
-    for file in os.listdir(directory):
-        if file.lower().endswith('.mp4'):
-            videos.append(os.path.join(directory, file))
+def turnOnScreen():
+    global screen
+    global player
+    print ("Screen ON")
+    os.system('raspi-gpio set 19 op a5')
+    playlist.play()
+    screen.on()
 
-def playVideos():
-    global videos
-    if len(videos) == 0:
-        getVideos()
-        time.sleep(5)
-        return
-    random.shuffle(videos)
-    for video in videos:
-        playProcess = Popen(['omxplayer', '--no-osd', '--aspect-mode', 'fill', video])
-        playProcess.wait()
+def turnOffScreen():
+    global screen
+    global player
+    print ("Screen OFF")
+    os.system('raspi-gpio set 19 ip')
+    playlist.pause()
+    screen.off()
 
+def playNextVideo():
+    global playlist
+    playlist.nextChannel()
 
-while (True):
-    playVideos()
+def playPrevVideo():
+    global playlist
+    playlist.prevChannel()
+
+def onToggle(state):
+    if state:
+        turnOnScreen()
+    else:
+        turnOffScreen()
+
+def onEncoderChange(value, direction):
+    if direction == "R":
+        playNextVideo()
+    if direction == "L":
+        playPrevVideo()
+
+GPIO.setwarnings(False)
+GPIO.cleanup()
+GPIO.setmode(GPIO.BCM)
+
+screen = Screen(SCREEN)
+ToggleButton(BUTTON, callback=onToggle)
+Encoder(ENCODER_A, ENCODER_B, callback=onEncoderChange)
+playlist = PlaylistPlayer(VIDS_DIR)
+
+turnOnScreen()
+
+try:
+    while True:
+        sleep(5)
+except Exception:
+    pass
+
+GPIO.cleanup()

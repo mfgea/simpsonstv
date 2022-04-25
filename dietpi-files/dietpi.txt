@@ -140,6 +140,8 @@ AUTO_SETUP_INSTALL_SOFTWARE_ID=69
 AUTO_SETUP_INSTALL_SOFTWARE_ID=96
 # DietPi-RAMlog
 AUTO_SETUP_INSTALL_SOFTWARE_ID=103
+# DietPi-Avahi-Daemon
+AUTO_SETUP_INSTALL_SOFTWARE_ID=152
 
 #------------------------------------------------------------------------------------------------------
 ##### Misc DietPi program settings #####

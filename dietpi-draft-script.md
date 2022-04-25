@@ -2,13 +2,15 @@ Notes: This is in a very draft state. These are the steps, but they lack all kin
 
 # Burn DietPi in a fresh SD card (32/64Gb)
 Using Balena Etcher
+After burning, mount the sd again if BalenaEtcher ejected it.
 
 # Modify Wifi Settings
 cp dietpi-files/dietpi-wifi.txt.template dietpi-files/dietpi-wifi.txt
 nano dietpi-files/dietpi-wifi.txt
 
-# Modify default user password
-using `openssl passwd -crypt supersecurepassword` generate a new password and copy/paste it in Automation_Custom_Script.sh
+# Add secrets for the script
+cp dietpi-files/secrets.txt.template dietpi-files/secrets.txt
+nano dietpi-files/secrets.txt
 
 # Copy files to the card
 cp -R dietpi-files/* /Volume/NONAME/
