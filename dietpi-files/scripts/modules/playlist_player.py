@@ -3,14 +3,16 @@
 from fileinput import close
 import json
 import logging
+import subprocess
 from os import path, listdir, remove
 from getpass import getuser
 from random import shuffle
 import tempfile
 from time import sleep
+from PIL import Image, ImageDraw, ImageFont
 from omxplayer.player import OMXPlayer
 
-# logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 SUBTITLE_TEMPLATE = '''
 1
@@ -29,6 +31,26 @@ def cleanupDbusFiles():
         print("All clean")
 
 cleanupDbusFiles()
+
+def genBackdropImage(channelName):
+    global USER
+    loadingMsg = "loading..."
+    width, height = (480, 320)
+
+    fontPrimary = ImageFont.truetype("DejaVuSans-Bold.ttf", size=40)
+    fontSecondary = ImageFont.truetype("DejaVuSans-Bold.ttf", size=16)
+    img = Image.new('RGB', (width, height), color='black')
+    draw = ImageDraw.Draw(img)
+
+    tw, th = draw.textsize(channelName, font=fontPrimary)
+    draw.text((10, ((height-th)/2)), channelName, font=fontPrimary, fill=(255, 255, 255))
+
+    lw, lh = draw.textsize(loadingMsg, font=fontSecondary)
+    draw.text((width-lw-10, height-lh-10), loadingMsg, font=fontSecondary, fill=(160, 160, 160))
+
+    filename = '/tmp/backdrop.' + channelName + '.' + USER + '.png'
+    img.save(filename)
+    return filename
 
 def listMp4(rootpath):
     entries = []
@@ -53,6 +75,7 @@ class Channel:
         self.shuffle: bool = shuffle
         self.items = []
         self.currentIndex = -1
+        self.backdropImage = ''
         self.load()
     
     def getLen(self):
@@ -67,6 +90,7 @@ class Channel:
         return 'directory';
     
     def load(self):
+        self.backdropImage = genBackdropImage(self.label)
         if(self.getType() == 'directory'):
             for file in listMp4(path.join(self.root, self.uri)):
                 self.items.append(path.join(self.root, self.uri, file))
@@ -88,6 +112,9 @@ class Channel:
             self.currentIndex = 0;
         return self.items[self.currentIndex]
 
+    def getBackdrop(self):
+        return self.backdropImage
+
 
 class PlaylistPlayer:
     def __init__(self, rootPath=''):
@@ -96,6 +123,8 @@ class PlaylistPlayer:
         self.labelDuration = '05'
         self.currentIndex: int = 0
         self.player: OMXPlayer = None
+        self.backdropProc = None
+        self.channelLoaded = False
 
         self.playlistOptions = {
             'scanDirectories': True,
@@ -132,36 +161,46 @@ class PlaylistPlayer:
             if (channel.getLen() > 0):
                 self.channels.insert(0, channel)
 
-    def createSubtitleFile(self, text):
-        global USER
-        global SUBTITLE_TEMPLATE
-        length = self.labelDuration
-        srtContent = SUBTITLE_TEMPLATE.format(length='15', text=text)
-        tmpdir = tempfile.gettempdir()
-        srtFile = path.join(tmpdir, 'channelname.' + USER + '.srt')
-        f = open(srtFile, 'w')
-        f.write(srtContent)
-        f.close()
-        return srtFile
+    def _playbackFinished(self, _, exit_status):
+        try:
+            self.player.quit()
+        except RuntimeError:
+            pass
+        finally:
+            self.player=None
+            if (exit_status==0):
+                self.playNext()
     
+    def loadChannel(self):
+        channel: Channel = self.channels[self.currentIndex]
+        print("Playing channel", channel.getLabel())
+        if (self.backdropProc != None):
+            subprocess.run(["sudo", "kill", "-9", str(self.backdropProc.pid)])
+            self.backdropProc = None
+
+        backdropPath = channel.getBackdrop()
+        if (backdropPath):
+            print("Showing backdrop", backdropPath)
+            self.backdropProc = subprocess.Popen(["sudo", "fbi", "--noverbose", "-T", "1", backdropPath])
+
+        self.channelLoaded = True
+
     def playNext(self):
         if len(self.channels) == 0:
             print("No videos")
             return
+        if(not self.channelLoaded):
+            self.loadChannel()
         channel: Channel = self.channels[self.currentIndex]
-        print("Playing channel", channel.getLabel())
         video = channel.nextVideo()
-        srtPath = self.createSubtitleFile(channel.getLabel())
-        print("Playing file", video, "with subs", srtPath)
+        print("Playing file", video)
         if (self.player != None):
+            print("Reusing old player", self.player)
             self.player.load(video)
         else:
-            self.player = OMXPlayer(video, args=['--no-osd', '--aspect-mode', 'fill', '--subtitles', srtPath, '--align', 'left'], pause=False)
-            self.player.exitEvent += lambda _x, exit_status: exit_status==0 and self.playNext()
-        if (self.showChannelLabel):
-            self.player.show_subtitles()
-        else:
-            self.player.hide_subtitles()
+            print("Spawning new player", self.player)
+            self.player = OMXPlayer(video, args=['--no-osd', '--aspect-mode', 'fill'], dbus_name='org.mpris.MediaPlayer2.omxplayer2',pause=False)
+            self.player.exitEvent += self._playbackFinished 
 
     def play(self):
         if self.player != None:
@@ -176,10 +215,18 @@ class PlaylistPlayer:
         self.currentIndex += 1
         if (self.currentIndex >= len(self.channels)):
             self.currentIndex = 0
+        self.loadChannel()
         self.playNext()
 
     def prevChannel(self):
         self.currentIndex -= 1
         if (self.currentIndex < 0):
             self.currentIndex = len(self.channels) - 1
+        self.loadChannel()
         self.playNext()
+
+    def cleanup(self):
+        if (self.backdropProc != None):
+            subprocess.run(["sudo", "kill", "-9", self.backdropProc.pid])
+        if (self.player and "quit" in self.player):
+            self.player.quit()

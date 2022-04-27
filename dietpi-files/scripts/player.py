@@ -1,5 +1,6 @@
 import os
 import random
+import atexit
 import RPi.GPIO as GPIO
 from time import sleep
 
@@ -23,7 +24,7 @@ libraries = []
 
 def turnOnScreen():
     global screen
-    global player
+    global playlist
     print ("Screen ON")
     os.system('raspi-gpio set 19 op a5')
     playlist.play()
@@ -31,7 +32,7 @@ def turnOnScreen():
 
 def turnOffScreen():
     global screen
-    global player
+    global playlist
     print ("Screen OFF")
     os.system('raspi-gpio set 19 ip')
     playlist.pause()
@@ -74,4 +75,9 @@ try:
 except Exception:
     pass
 
-GPIO.cleanup()
+def cleanup():
+    global playlist
+    GPIO.cleanup()
+    playlist.cleanup()
+
+atexit.register(cleanup)

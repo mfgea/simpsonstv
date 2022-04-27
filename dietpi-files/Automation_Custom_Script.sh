@@ -23,11 +23,11 @@ echo "consoleblank=1 logo.nologo quiet loglevel=0 plymouth.enable=0 vt.global_cu
 
 ## Update APT lists and install required deps
 apt-get update
-apt-get install -y raspi-gpio bc fbi git python3-dev python3-pip python3-smbus python3-spidev evtest libts-bin device-tree-compiler libraspberrypi-dev build-essential libts0 libavcodec58 libavutil56 libswresample3 libavformat58 libasound2 dbus cmake
+apt-get install -y raspi-gpio bc fbi git python3-dev python3-pip python3-smbus python3-spidev evtest libts-bin device-tree-compiler libraspberrypi-dev build-essential libts0 libavcodec58 libavutil56 libswresample3 libavformat58 libasound2 dbus cmake fonts-freefont-ttf
 
 ## OMXPlayer utilities
 apt-get install libdbus-1-3 libdbus-1-dev
-pip install omxplayer-wrapper
+pip install omxplayer-wrapper Pillow
 
 ## Create bin dir (where all scripts will be stored), copy scripts and set executable bit
 mkdir -p $HOME/bin
