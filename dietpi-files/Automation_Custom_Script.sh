@@ -8,8 +8,11 @@ HOME="/home/$USER"
 
 ## Add new User bart with password and add it to the sudoers file to be able to use sudo without a password
 ## Password generated using `openssl passwd -crypt supersecurepassword`
-useradd -m -p "$USER_PASSWORD" -s /bin/bash -G sudo,gpio,video "$user" && echo "${USER}:${USER_PASSWORD}" | chpasswd
+useradd -m -p "$USER_PASSWORD" -s /bin/bash -G sudo,gpio,video,tty "$user" && echo "${USER}:${USER_PASSWORD}" | chpasswd
 echo "" | sudo tee /etc/sudoers.d/$USER
+
+
+sed -i 's/tty\[.*0620/0660/' /usr/lib/udev/rules.d/50-udev-default.rules
 
 ## Create the samba user/pass
 echo -ne "$USER_PASSWORD\n$USER_PASSWORD\n" | smbpasswd -a -s $USER

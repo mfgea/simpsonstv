@@ -9,9 +9,9 @@ from getpass import getuser
 from random import shuffle
 from time import sleep
 from omxplayer.player import OMXPlayer
-from channel import Channel
-from utils import listDirs
-from debounce import debounce
+from modules.channel import Channel
+from modules.utils import listDirs, hasMethod
+from modules.debounce import debounce
 
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -34,7 +34,7 @@ class PlaylistPlayer:
         self.cleanupDbusFiles()
 
         ## Check if config file exists. If so, then load the config options
-        if(path.isfile(self.rootPath + '/player.json')): # if player.json exists
+        if path.isfile(self.rootPath + '/player.json'): # if player.json exists
             print("Loading player.json file")
             jsonFile = open(self.rootPath + '/player.json')
             data = json.load(jsonFile)
@@ -46,24 +46,24 @@ class PlaylistPlayer:
                 self.channels.append(Channel(self.rootPath, channel['label'], channel['uri'], channel['shuffle']))
         
         ## Scan the root path. Each directory turns into a channel 
-        if(self.playlistOptions['scanDirectories']):
+        if self.playlistOptions['scanDirectories']:
             dirs = listDirs(self.rootPath)
             tmpChannels = []
             for dirName in dirs:
                 channel = Channel(self.rootPath, dirName, dirName)
-                if (channel.getLen() > 0):
+                if channel.getLen() > 0:
                     tmpChannels.append(channel)
             tmpChannels.extend(self.channels)
             self.channels = tmpChannels
 
         ## Scans the root video files and adds them as a new channel 
-        if(self.playlistOptions['scanRoot']):
+        if self.playlistOptions['scanRoot']:
             channel = Channel(self.rootPath, 'Root', '.')
-            if (channel.getLen() > 0):
+            if channel.getLen() > 0:
                 self.channels.insert(0, channel)
 
     def cleanupDbusFiles(self):
-        USER=getuser()
+        USER = getuser()
         try:
             remove('/tmp/omxplayerdbus.' + USER + '.pid')
             remove('/tmp/omxplayerdbus.' + USER)
@@ -72,27 +72,26 @@ class PlaylistPlayer:
 
     def _playbackFinished(self, _, exit_status):
         try:
-            self.player.quit()
+            if hasMethod(self.player, "quit"):
+                self.player.quit()
         except RuntimeError:
             pass
-        try:
-            subprocess.run(["pkill", "-9", "omxplayer"])
-        except RuntimeError:
-            pass
+        finally:
+            subprocess.run(["pkill", "-KILL", "omxplayer"])
         self.player=None
         sleep(0.5)
-        if (exit_status==0):
+        if exit_status == 0:
             self.playNext()
 
     def loadChannel(self):
         channel: Channel = self.channels[self.currentIndex]
         print("Playing channel", channel.getLabel())
-        if (self.backdropProc != None):
-            subprocess.run(["pkill", "-9", "fbi"])
+        if self.backdropProc != None:
+            subprocess.run(["pkill", "-KILL", "fbi"])
             self.backdropProc = None
 
         backdropPath = channel.getBackdrop()
-        if (backdropPath):
+        if backdropPath:
             print("Showing backdrop", backdropPath)
             self.backdropProc = subprocess.Popen(["fbi", "--noverbose", "-T", "1", backdropPath])
 
@@ -102,12 +101,12 @@ class PlaylistPlayer:
         if len(self.channels) == 0:
             print("No videos")
             return
-        if(not self.channelLoaded):
+        if not self.channelLoaded:
             self.loadChannel()
         channel: Channel = self.channels[self.currentIndex]
         video = channel.nextVideo()
         print("Playing file", video)
-        if (self.player != None):
+        if hasMethod(self.player, "load"):
             print("Reusing old player", self.player)
             self.player.load(video)
         else:
@@ -117,18 +116,18 @@ class PlaylistPlayer:
             sleep(3)
 
     def play(self):
-        if self.player != None:
+        if hasMethod(self.player, "play"):
             self.player.play()
         else:
             self.playNext()
 
     def pause(self):
-        if self.player != None: self.player.pause()
+        if hasMethod(self.player, "pause"): self.player.pause()
 
     @debounce(1)
     def nextChannel(self):
         self.currentIndex += 1
-        if (self.currentIndex >= len(self.channels)):
+        if self.currentIndex >= len(self.channels):
             self.currentIndex = 0
         self.loadChannel()
         self.playNext()
@@ -136,13 +135,13 @@ class PlaylistPlayer:
     @debounce(1)
     def prevChannel(self):
         self.currentIndex -= 1
-        if (self.currentIndex < 0):
+        if self.currentIndex < 0:
             self.currentIndex = len(self.channels) - 1
         self.loadChannel()
         self.playNext()
 
     def cleanup(self):
-        if (self.player and "quit" in self.player):
+        if hasMethod(self.player, "quit"):
             self.player.quit()
-        subprocess.run(["pkill", "-9", 'fbi'])
-        subprocess.run(["pkill", "-9", 'omxplayer'])
+        subprocess.run(["pkill", "-KILL", 'fbi'])
+        subprocess.run(["pkill", "-KILL", 'omxplayer'])

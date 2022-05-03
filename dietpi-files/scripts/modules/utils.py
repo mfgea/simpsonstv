@@ -36,3 +36,6 @@ def listDirs(rootpath):
         if path.isdir(fullpath):
             entries.append(entry)
     return entries
+
+def hasMethod(o, name):
+    return (o is not None) and callable(getattr(o, name, None))

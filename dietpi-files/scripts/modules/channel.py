@@ -1,6 +1,6 @@
 from os import path
 from random import shuffle
-from utils import genBackdropImage, listMp4
+from modules.utils import genBackdropImage, listMp4
 
 class Channel:
     def __init__(self, root: str, label: str, uri: str, shuffle: bool=True):
